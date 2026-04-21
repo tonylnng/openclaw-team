@@ -64,8 +64,20 @@ sudo apt-get update
 sudo apt-get install -y docker-compose-plugin
 ```
 
+If Ubuntu cannot locate `docker-compose-plugin`, unzip the package and either run the included Docker installer or install legacy Compose:
+
+```bash
+./scripts/install-docker-ubuntu.sh
+```
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose
+```
+
 ## Documentation
 
+- `FAQ.md`: pre-flight checks, common issues, and troubleshooting
 - `DEPLOYMENT.md`: generic deployment instructions
 - `USAGE.md`: role and workspace usage guide
 

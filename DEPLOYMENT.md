@@ -10,13 +10,13 @@ This guide describes a generic deployment flow for the OpenClaw Ubuntu Docker st
 - A user account with permission to run Docker
 - Sufficient disk space for six persistent role workspaces
 
+For detailed validation commands before deployment, see `FAQ.md`.
+
 ## Install Docker
 
 If Docker is not already installed, run:
 
 ```bash
-unzip openclaw-docker.zip
-cd openclaw-docker
 chmod +x scripts/install-docker-ubuntu.sh
 ./scripts/install-docker-ubuntu.sh
 newgrp docker
@@ -50,6 +50,21 @@ If neither is available, install the Compose plugin:
 ```bash
 sudo apt-get update
 sudo apt-get install -y docker-compose-plugin
+```
+
+If the plugin package is unavailable from your apt sources, install Docker using the included installer:
+
+```bash
+chmod +x scripts/install-docker-ubuntu.sh
+./scripts/install-docker-ubuntu.sh
+newgrp docker
+```
+
+Or install legacy Compose:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose
 ```
 
 ## Verify
