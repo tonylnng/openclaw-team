@@ -57,6 +57,13 @@ chmod +x scripts/install-docker-ubuntu.sh
 newgrp docker
 ```
 
+If `docker compose` is unavailable on the VM:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+```
+
 ## Documentation
 
 - `DEPLOYMENT.md`: generic deployment instructions

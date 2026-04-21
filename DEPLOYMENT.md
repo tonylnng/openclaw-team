@@ -31,6 +31,27 @@ newgrp docker
 ./scripts/openclaw.sh ps
 ```
 
+## Compose compatibility
+
+The helper script supports both:
+
+```bash
+docker compose
+```
+
+and:
+
+```bash
+docker-compose
+```
+
+If neither is available, install the Compose plugin:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+```
+
 ## Verify
 
 ```bash
