@@ -405,6 +405,20 @@ Pull the latest repository version or download the latest zip package, then rebu
 ./scripts/openclaw.sh build
 ```
 
+### Why did the build fail with `npm ERR! code EBADENGINE`?
+
+This happens when `npm@latest` requires a newer Node.js version than the apt-provided Node.js package.
+
+The current Dockerfile avoids upgrading npm during the base-image build and uses Ubuntu's packaged Node.js/npm pair for compatibility.
+
+Pull the latest repository version or download the latest zip package, then rebuild:
+
+```bash
+./scripts/openclaw.sh build
+```
+
+If a project needs a newer Node.js runtime, install it intentionally using a NodeSource repository, `nvm`, or a dedicated Node base image layer instead of upgrading npm blindly.
+
 If you need a different UID/GID, edit `.env`:
 
 ```text
