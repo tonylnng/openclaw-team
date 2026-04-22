@@ -393,6 +393,31 @@ Then rebuild:
 ./scripts/openclaw.sh restart
 ```
 
+### Why did the build fail with `groupadd: GID '1000' already exists`?
+
+Some Ubuntu base images already contain a group or user with UID/GID `1000`.
+
+The current Dockerfile handles this by reusing and renaming the existing UID/GID entry to `openclaw` where possible.
+
+Pull the latest repository version or download the latest zip package, then rebuild:
+
+```bash
+./scripts/openclaw.sh build
+```
+
+If you need a different UID/GID, edit `.env`:
+
+```text
+OPENCLAW_UID=1001
+OPENCLAW_GID=1001
+```
+
+Then rebuild:
+
+```bash
+./scripts/openclaw.sh build
+```
+
 ### How do I check what volumes exist?
 
 ```bash
