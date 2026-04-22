@@ -75,6 +75,8 @@ newgrp docker
 
 If the issue remains, log out and log in again.
 
+The helper script also performs this pre-flight check before Docker operations. If the current user cannot access the Docker daemon, it prints the recommended `usermod` and `newgrp` commands instead of showing a long Python traceback from legacy `docker-compose`.
+
 ### 5. Check disk space
 
 ```bash
