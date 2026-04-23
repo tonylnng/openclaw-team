@@ -82,6 +82,8 @@ Key defaults (from the latest `.env.example`):
 
 > **Note:** the legacy `OPENCLAW_API_KEY` / `OPENCLAW_API_URL` variables have been removed. Use `OPENCLAW_GATEWAY_TOKEN` — it's the only auth secret the stack needs.
 
+> **Running into `pull_policy value 'missing'` or `'name' does not match` errors from Compose?** Your Compose schema is older than the one the previous `docker-compose.yml` targeted. Pull the latest `main` and rerun `./scripts/setup.sh` — `name:` and `pull_policy:` have been removed from the compose file and the stack now handles image pulls from `scripts/start.sh`. See `openclaw-docker/README.md#troubleshooting` for details.
+
 See `openclaw-docker/README.md` for the full kick-start, reverse-proxy patterns, and troubleshooting.
 
 ---
