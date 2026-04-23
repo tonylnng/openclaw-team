@@ -21,8 +21,7 @@ x-openclaw-common: &openclaw-common
     - openclaw
   environment: &openclaw-env
     TZ: ${OPENCLAW_TZ:-UTC}
-    OPENCLAW_API_KEY: ${OPENCLAW_API_KEY:-}
-    OPENCLAW_API_URL: ${OPENCLAW_API_URL:-https://api.openclaw.example.com}
+    OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
     OPENCLAW_INTERNAL_PORT: ${OPENCLAW_INTERNAL_PORT:-18789}
   logging:
     driver: ${OPENCLAW_LOG_DRIVER:-json-file}
