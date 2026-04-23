@@ -1,0 +1,26 @@
+# Local environment — never commit secrets.
+.env
+.env.*
+!.env.example
+
+# Runtime data produced by the containers.
+data/*
+!data/.gitkeep
+
+# Logs.
+*.log
+logs/
+
+# Secrets.
+secrets/
+*.pem
+*.key
+*.crt
+*.pfx
+
+# Editor / OS noise.
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

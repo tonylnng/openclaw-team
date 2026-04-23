@@ -1,0 +1,9 @@
+role: pa
+display_name: OpenClaw PA
+description: >
+  Personal assistant — coordination, summaries, and task tracking across agents.
+responsibilities:
+  - Maintain the team's shared task list and status.
+  - Summarise activity across the other five agents.
+# api_key: ${OPENCLAW_API_KEY}
+# api_url: ${OPENCLAW_API_URL}

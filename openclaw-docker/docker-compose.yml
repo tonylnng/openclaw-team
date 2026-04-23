@@ -1,0 +1,126 @@
+# OpenClaw Docker — multi-agent Docker Compose stack.
+#
+# This file runs six OpenClaw agent containers using the same upstream
+# OpenClaw Docker image. Each agent has:
+#   * a distinct container name
+#   * a distinct host port
+#   * a distinct persistent data volume (./data/<agent>)
+#   * a distinct config folder (./config/<agent>) mounted read-only
+#
+# All values come from `.env` (see `.env.example`). Replace
+# `OPENCLAW_IMAGE` with your real image before running.
+
+name: openclaw
+
+x-openclaw-common: &openclaw-common
+  image: ${OPENCLAW_IMAGE:-your-openclaw-image:latest}
+  pull_policy: ${OPENCLAW_PULL_POLICY:-missing}
+  restart: ${OPENCLAW_RESTART_POLICY:-unless-stopped}
+  networks:
+    - openclaw
+  environment: &openclaw-env
+    TZ: ${OPENCLAW_TZ:-UTC}
+    OPENCLAW_API_KEY: ${OPENCLAW_API_KEY:-replace-me-with-real-key}
+    OPENCLAW_API_URL: ${OPENCLAW_API_URL:-https://api.openclaw.example.com}
+    OPENCLAW_INTERNAL_PORT: ${OPENCLAW_INTERNAL_PORT:-8080}
+  logging:
+    driver: ${OPENCLAW_LOG_DRIVER:-json-file}
+    options:
+      max-size: ${OPENCLAW_LOG_MAX_SIZE:-10m}
+      max-file: ${OPENCLAW_LOG_MAX_FILE:-3}
+  healthcheck:
+    test: ["CMD-SHELL", "nc -z 127.0.0.1 ${OPENCLAW_INTERNAL_PORT:-8080} || exit 1"]
+    interval: 30s
+    timeout: 5s
+    retries: 3
+    start_period: 20s
+
+services:
+  architect:
+    <<: *openclaw-common
+    container_name: ${ARCHITECT_CONTAINER_NAME:-openclaw-architect}
+    hostname: ${ARCHITECT_CONTAINER_NAME:-openclaw-architect}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${ARCHITECT_ROLE:-architect}
+      OPENCLAW_AGENT_NAME: ${ARCHITECT_CONTAINER_NAME:-openclaw-architect}
+    ports:
+      - "${ARCHITECT_HOST_PORT:-18001}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/architect:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/architect:/var/lib/openclaw
+
+  designer:
+    <<: *openclaw-common
+    container_name: ${DESIGNER_CONTAINER_NAME:-openclaw-designer}
+    hostname: ${DESIGNER_CONTAINER_NAME:-openclaw-designer}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${DESIGNER_ROLE:-designer}
+      OPENCLAW_AGENT_NAME: ${DESIGNER_CONTAINER_NAME:-openclaw-designer}
+    ports:
+      - "${DESIGNER_HOST_PORT:-18002}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/designer:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/designer:/var/lib/openclaw
+
+  developer:
+    <<: *openclaw-common
+    container_name: ${DEVELOPER_CONTAINER_NAME:-openclaw-developer}
+    hostname: ${DEVELOPER_CONTAINER_NAME:-openclaw-developer}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${DEVELOPER_ROLE:-developer}
+      OPENCLAW_AGENT_NAME: ${DEVELOPER_CONTAINER_NAME:-openclaw-developer}
+    ports:
+      - "${DEVELOPER_HOST_PORT:-18003}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/developer:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/developer:/var/lib/openclaw
+
+  qc:
+    <<: *openclaw-common
+    container_name: ${QC_CONTAINER_NAME:-openclaw-qc}
+    hostname: ${QC_CONTAINER_NAME:-openclaw-qc}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${QC_ROLE:-qc}
+      OPENCLAW_AGENT_NAME: ${QC_CONTAINER_NAME:-openclaw-qc}
+    ports:
+      - "${QC_HOST_PORT:-18004}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/qc:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/qc:/var/lib/openclaw
+
+  operator:
+    <<: *openclaw-common
+    container_name: ${OPERATOR_CONTAINER_NAME:-openclaw-operator}
+    hostname: ${OPERATOR_CONTAINER_NAME:-openclaw-operator}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${OPERATOR_ROLE:-operator}
+      OPENCLAW_AGENT_NAME: ${OPERATOR_CONTAINER_NAME:-openclaw-operator}
+    ports:
+      - "${OPERATOR_HOST_PORT:-18005}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/operator:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/operator:/var/lib/openclaw
+
+  pa:
+    <<: *openclaw-common
+    container_name: ${PA_CONTAINER_NAME:-openclaw-pa}
+    hostname: ${PA_CONTAINER_NAME:-openclaw-pa}
+    environment:
+      <<: *openclaw-env
+      OPENCLAW_ROLE: ${PA_ROLE:-pa}
+      OPENCLAW_AGENT_NAME: ${PA_CONTAINER_NAME:-openclaw-pa}
+    ports:
+      - "${PA_HOST_PORT:-18006}:${OPENCLAW_INTERNAL_PORT:-8080}"
+    volumes:
+      - ${OPENCLAW_CONFIG_DIR:-./config}/pa:/opt/openclaw/config:ro
+      - ${OPENCLAW_DATA_DIR:-./data}/pa:/var/lib/openclaw
+
+networks:
+  openclaw:
+    name: ${OPENCLAW_NETWORK:-openclaw-net}
+    driver: bridge
