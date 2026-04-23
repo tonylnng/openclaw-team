@@ -379,6 +379,32 @@ The container user may not match your host UID. Either run the agents as your UI
 sudo chown -R 1000:1000 data/
 ```
 
+### `Compose file is invalid` / `pull_policy value 'missing' is not one of …` / `'name' does not match`
+These errors mean you are running an older Compose schema (typically the
+legacy `docker-compose` v1 binary, or an outdated Compose v2 that does
+not accept `pull_policy: missing`). The fix is already on `main`:
+
+1. Pull the latest commit (the top-level `name:` and service-level
+   `pull_policy:` have been removed from `docker-compose.yml`).
+2. Migrate any existing `.env` that still has the old value:
+   ```bash
+   # Re-run setup; it auto-migrates OPENCLAW_PULL_POLICY=missing → always.
+   ./scripts/setup.sh
+   # Or do it manually:
+   sed -i -E 's/^OPENCLAW_PULL_POLICY=(missing|if_not_present)\s*$/OPENCLAW_PULL_POLICY=always/' .env
+   ```
+3. Restart the stack:
+   ```bash
+   ./scripts/start.sh
+   ```
+
+Pull behaviour is now driven by `scripts/start.sh` (which calls
+`docker compose pull` when `OPENCLAW_PULL_POLICY=always`), so the compose
+file stays portable across Compose v2 and legacy docker-compose v1.
+
+Upgrade tip: if you're on Ubuntu, the modern plugin is one command away
+(see below) and fixes any `docker compose` syntax gaps in one shot.
+
 ### `docker compose` not found
 Install the plugin:
 

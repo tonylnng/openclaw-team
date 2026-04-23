@@ -10,12 +10,19 @@
 # All values come from `.env` (see `.env.example`). The default image is
 # `ghcr.io/openclaw/openclaw:latest`; override `OPENCLAW_IMAGE` in `.env`
 # if you need a pinned version or a locally-built image.
-
-name: openclaw
+#
+# Compatibility notes:
+#   * No top-level `name:` — legacy `docker-compose` v1 rejects it. The
+#     project name is set via `COMPOSE_PROJECT_NAME` in the helper scripts
+#     (see `scripts/_compose.sh`) or falls back to the directory name.
+#   * No `pull_policy:` field — its accepted values differ between Compose
+#     v2 (`always|never|missing|build|if_not_present`) and older schemas.
+#     The helper scripts (`scripts/start.sh`) call `docker compose pull`
+#     based on `OPENCLAW_PULL_POLICY` in `.env` so the behaviour is
+#     portable across compose versions.
 
 x-openclaw-common: &openclaw-common
   image: ${OPENCLAW_IMAGE:-ghcr.io/openclaw/openclaw:latest}
-  pull_policy: ${OPENCLAW_PULL_POLICY:-always}
   restart: ${OPENCLAW_RESTART_POLICY:-unless-stopped}
   networks:
     - openclaw
