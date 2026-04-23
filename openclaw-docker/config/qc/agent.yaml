@@ -1,0 +1,9 @@
+role: qc
+display_name: OpenClaw QC
+description: >
+  Test planning, validation, and release gating.
+responsibilities:
+  - Own automated and manual test strategy.
+  - Approve or block release candidates based on evidence.
+# api_key: ${OPENCLAW_API_KEY}
+# api_url: ${OPENCLAW_API_URL}
