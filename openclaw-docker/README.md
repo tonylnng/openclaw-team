@@ -69,8 +69,8 @@ cd openclaw-docker
 # 1. Seed .env and create per-agent data directories.
 ./scripts/setup.sh
 
-# 2. Edit .env. At a minimum:
-#      OPENCLAW_IMAGE=your-openclaw-image:latest
+# 2. Edit .env. The image defaults to `ghcr.io/openclaw/openclaw:latest`;
+#    at a minimum fill in real credentials if your deployment needs them:
 #      OPENCLAW_API_KEY=<real-key>
 #      OPENCLAW_API_URL=<real-url>
 $EDITOR .env
@@ -103,8 +103,8 @@ All tunable values live in `.env` (copied from `.env.example`). The most importa
 
 | Variable                     | Purpose                                                             |
 |------------------------------|---------------------------------------------------------------------|
-| `OPENCLAW_IMAGE`             | The OpenClaw Docker image every agent runs. **Must be replaced.**  |
-| `OPENCLAW_INTERNAL_PORT`     | Port the image listens on inside the container (default `8080`).    |
+| `OPENCLAW_IMAGE`             | The OpenClaw Docker image every agent runs. Defaults to `ghcr.io/openclaw/openclaw:latest`. |
+| `OPENCLAW_INTERNAL_PORT`     | Port the image listens on inside the container (default `18789`).   |
 | `OPENCLAW_API_KEY`           | API key exposed to every agent as `OPENCLAW_API_KEY`.              |
 | `OPENCLAW_API_URL`           | API base URL exposed as `OPENCLAW_API_URL`.                        |
 | `<AGENT>_HOST_PORT`          | Host port published for each agent.                                 |
@@ -114,7 +114,58 @@ All tunable values live in `.env` (copied from `.env.example`). The most importa
 | `OPENCLAW_NETWORK`           | Bridge network name all agents join.                                |
 | `OPENCLAW_TZ`                | Timezone inside each container.                                     |
 
-**If your OpenClaw image listens on a port other than `8080`, change `OPENCLAW_INTERNAL_PORT`.** The compose health check also uses this port.
+**If your OpenClaw image listens on a port other than `18789`, change `OPENCLAW_INTERNAL_PORT`.** The compose health check also uses this port.
+
+### Recommended `.env` for the six-agent setup
+
+A reasonable starting `.env` after running `./scripts/setup.sh`:
+
+```bash
+# Image — official OpenClaw image on GHCR.
+OPENCLAW_IMAGE=ghcr.io/openclaw/openclaw:latest
+OPENCLAW_PULL_POLICY=always
+OPENCLAW_RESTART_POLICY=unless-stopped
+
+# Shared runtime.
+OPENCLAW_NETWORK=openclaw-net
+OPENCLAW_DATA_DIR=./data
+OPENCLAW_CONFIG_DIR=./config
+OPENCLAW_TZ=UTC
+OPENCLAW_LOG_DRIVER=json-file
+OPENCLAW_LOG_MAX_SIZE=10m
+OPENCLAW_LOG_MAX_FILE=3
+
+# Credentials — fill in locally, do NOT commit.
+OPENCLAW_API_KEY=
+OPENCLAW_API_URL=https://api.openclaw.example.com
+
+# Internal port the OpenClaw image listens on.
+OPENCLAW_INTERNAL_PORT=18789
+
+# Per-agent containers.
+ARCHITECT_CONTAINER_NAME=openclaw-architect
+DESIGNER_CONTAINER_NAME=openclaw-designer
+DEVELOPER_CONTAINER_NAME=openclaw-developer
+QC_CONTAINER_NAME=openclaw-qc
+OPERATOR_CONTAINER_NAME=openclaw-operator
+PA_CONTAINER_NAME=openclaw-pa
+
+# Per-agent host ports.
+ARCHITECT_HOST_PORT=18001
+DESIGNER_HOST_PORT=18002
+DEVELOPER_HOST_PORT=18003
+QC_HOST_PORT=18004
+OPERATOR_HOST_PORT=18005
+PA_HOST_PORT=18006
+
+# Per-agent role ids.
+ARCHITECT_ROLE=architect
+DESIGNER_ROLE=designer
+DEVELOPER_ROLE=developer
+QC_ROLE=qc
+OPERATOR_ROLE=operator
+PA_ROLE=pa
+```
 
 ### Per-agent config
 
@@ -184,7 +235,7 @@ docker compose pull
 
 Because each agent has a distinct hostname (`openclaw-architect`, `openclaw-designer`, …) on the `openclaw-net` bridge and a distinct host port, you can front them with nginx/Caddy/Traefik in either of two ways:
 
-1. **Same Docker network:** attach the proxy container to `openclaw-net` (`networks: [openclaw-net]` in its compose file using `external: true`) and route upstreams to `http://openclaw-architect:8080`, `http://openclaw-designer:8080`, etc.
+1. **Same Docker network:** attach the proxy container to `openclaw-net` (`networks: [openclaw-net]` in its compose file using `external: true`) and route upstreams to `http://openclaw-architect:18789`, `http://openclaw-designer:18789`, etc. (or whatever `OPENCLAW_INTERNAL_PORT` is set to).
 2. **Host-port routing:** route upstreams to `http://127.0.0.1:18001`, `http://127.0.0.1:18002`, … on the Docker host.
 
 Both patterns work; option 1 keeps the ports off the public host interface.
@@ -193,8 +244,8 @@ Both patterns work; option 1 keeps the ports off the public host interface.
 
 ## Troubleshooting
 
-### `OPENCLAW_IMAGE` still set to the placeholder
-`docker compose` will try to pull `your-openclaw-image:latest` and fail with `pull access denied`. Edit `.env` and set the real image reference, then `./scripts/start.sh` again.
+### `OPENCLAW_IMAGE` cannot be pulled
+If `docker compose` fails with `pull access denied` or `manifest not found`, the tag in `OPENCLAW_IMAGE` is not reachable. Check you're logged in to `ghcr.io` if the image is private (`docker login ghcr.io`), pin to a known-good tag, or point at a locally-built image, then `./scripts/start.sh` again.
 
 ### Port already in use
 Change the offending `<AGENT>_HOST_PORT` value in `.env`, then restart:
@@ -208,7 +259,7 @@ Change the offending `<AGENT>_HOST_PORT` value in `.env`, then restart:
 ```bash
 ./scripts/logs.sh <agent>
 ```
-Common causes: the image needs extra env vars not yet wired in, the image's internal port isn't `8080` (update `OPENCLAW_INTERNAL_PORT`), or the config file path mounted at `/opt/openclaw/config/agent.yaml` isn't where the image expects it.
+Common causes: the image needs extra env vars not yet wired in, the image's internal port isn't `18789` (update `OPENCLAW_INTERNAL_PORT`), or the config file path mounted at `/opt/openclaw/config/agent.yaml` isn't where the image expects it.
 
 ### `permission denied` writing to `./data/<agent>`
 The container user may not match your host UID. Either run the agents as your UID by adding `user: "${UID}:${GID}"` to each service, or `chown` the data directory to match the UID the image uses.
@@ -246,5 +297,5 @@ rm -rf data/*/
 ## Security notes
 
 - `.env` is gitignored. Never commit real API keys.
-- The included `OPENCLAW_API_KEY=replace-me-with-real-key` is an obvious placeholder, not a secret.
+- `.env.example` ships with `OPENCLAW_API_KEY=` blank on purpose — set a real value only in your local `.env`.
 - For production, consider managing secrets with Docker secrets or an external manager instead of plain env vars.

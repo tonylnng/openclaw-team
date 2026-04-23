@@ -27,7 +27,7 @@ fi
 
 if [[ ! -f .env ]]; then
   cp .env.example .env
-  echo "Created .env from .env.example — edit it to set OPENCLAW_IMAGE and real secrets."
+  echo "Created .env from .env.example — edit it to fill in OPENCLAW_API_KEY / OPENCLAW_API_URL if your deployment requires them."
 fi
 
 for agent in "${AGENTS[@]}"; do
@@ -36,5 +36,5 @@ for agent in "${AGENTS[@]}"; do
 done
 
 echo "Setup complete. Next steps:"
-echo "  1. Edit .env (at minimum set OPENCLAW_IMAGE and OPENCLAW_API_KEY)."
+echo "  1. Review .env (defaults use ghcr.io/openclaw/openclaw:latest; set OPENCLAW_API_KEY if required)."
 echo "  2. ./scripts/start.sh"
