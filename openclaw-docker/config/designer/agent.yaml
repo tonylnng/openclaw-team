@@ -5,5 +5,4 @@ description: >
 responsibilities:
   - Produce user flows, wireframes, and design specifications.
   - Collaborate with architect on feasibility and developer on handoff.
-# api_key: ${OPENCLAW_API_KEY}
-# api_url: ${OPENCLAW_API_URL}
+# gateway_token: ${OPENCLAW_GATEWAY_TOKEN}

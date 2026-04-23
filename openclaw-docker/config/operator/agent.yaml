@@ -5,5 +5,4 @@ description: >
 responsibilities:
   - Deploy and operate services in target environments.
   - Own monitoring, alerting, and incident response runbooks.
-# api_key: ${OPENCLAW_API_KEY}
-# api_url: ${OPENCLAW_API_URL}
+# gateway_token: ${OPENCLAW_GATEWAY_TOKEN}

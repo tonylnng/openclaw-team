@@ -63,17 +63,26 @@ Use this when you want:
 - Isolated config (`config/<agent>/agent.yaml`) and state (`data/<agent>/`) per agent.
 - A simple `.env` file to swap the image, ports, and shared credentials.
 
-Quick start:
+Quick start (Ubuntu VM):
 
 ```bash
 cd openclaw-docker
-./scripts/setup.sh          # seeds .env, creates data dirs
-$EDITOR .env                # set OPENCLAW_IMAGE and secrets
-./scripts/start.sh          # docker compose up -d
-./scripts/status.sh
+./scripts/setup.sh                  # seeds .env from .env.example, creates data/ + config/ dirs
+$EDITOR .env                        # defaults are sane; only edit if overriding image/ports/token
+docker compose config >/dev/null    # validate compose + .env interpolation
+./scripts/start.sh                  # docker compose up -d (pulls ghcr.io/openclaw/openclaw:latest)
+./scripts/status.sh                 # confirm all six agents are Up / healthy
 ```
 
-See `openclaw-docker/README.md` for the full guide, including reverse-proxy patterns and troubleshooting.
+Key defaults (from the latest `.env.example`):
+
+- `OPENCLAW_IMAGE=ghcr.io/openclaw/openclaw:latest`
+- `OPENCLAW_INTERNAL_PORT=18789` (port the image listens on inside each container)
+- `OPENCLAW_GATEWAY_TOKEN=` (left blank — first-run onboarding generates it; paste an existing token only if pre-seeding)
+
+> **Note:** the legacy `OPENCLAW_API_KEY` / `OPENCLAW_API_URL` variables have been removed. Use `OPENCLAW_GATEWAY_TOKEN` — it's the only auth secret the stack needs.
+
+See `openclaw-docker/README.md` for the full kick-start, reverse-proxy patterns, and troubleshooting.
 
 ---
 
