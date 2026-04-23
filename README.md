@@ -84,6 +84,8 @@ Key defaults (from the latest `.env.example`):
 
 > **Running into `pull_policy value 'missing'` or `'name' does not match` errors from Compose?** Your Compose schema is older than the one the previous `docker-compose.yml` targeted. Pull the latest `main` and rerun `./scripts/setup.sh` — `name:` and `pull_policy:` have been removed from the compose file and the stack now handles image pulls from `scripts/start.sh`. See `openclaw-docker/README.md#troubleshooting` for details.
 
+> **Seeing `pull access denied for your-openclaw-image`?** Your `.env` was created from an older template that shipped a placeholder image name. Pull the latest `main` and rerun `./scripts/setup.sh` — it now migrates `OPENCLAW_IMAGE=your-openclaw-image:latest` in an existing `.env` to `ghcr.io/openclaw/openclaw:latest` without touching other values. See `openclaw-docker/README.md#troubleshooting` for the manual fix.
+
 See `openclaw-docker/README.md` for the full kick-start, reverse-proxy patterns, and troubleshooting.
 
 ---

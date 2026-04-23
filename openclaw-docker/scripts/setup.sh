@@ -39,6 +39,21 @@ else
     echo "Migrated legacy OPENCLAW_PULL_POLICY value in .env to 'always'."
     echo "  (Compose schemas differ on 'missing' vs 'if_not_present'; the stack now handles pulling from scripts/start.sh.)"
   fi
+
+  # Migrate the old placeholder `OPENCLAW_IMAGE=your-openclaw-image:latest`
+  # left over from earlier templates. That value is not a real image and
+  # causes `docker compose pull` to fail with `pull access denied for
+  # your-openclaw-image`. Replace it with the official GHCR image. We only
+  # touch this exact placeholder so any custom / pinned image the user set
+  # is preserved.
+  if grep -Eq '^OPENCLAW_IMAGE=[[:space:]]*your-openclaw-image:latest[[:space:]]*$' .env; then
+    tmp=".env.tmp.$$"
+    sed -E 's|^OPENCLAW_IMAGE=[[:space:]]*your-openclaw-image:latest[[:space:]]*$|OPENCLAW_IMAGE=ghcr.io/openclaw/openclaw:latest|' .env >"${tmp}"
+    mv "${tmp}" .env
+    echo "Migrated legacy OPENCLAW_IMAGE placeholder in .env to 'ghcr.io/openclaw/openclaw:latest'."
+    echo "  (The old template shipped a 'your-openclaw-image:latest' placeholder that is not a real image."
+    echo "   Set OPENCLAW_IMAGE explicitly in .env if you want a different tag or a locally-built image.)"
+  fi
 fi
 
 for agent in "${AGENTS[@]}"; do

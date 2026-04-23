@@ -337,8 +337,36 @@ For production deployments, terminate TLS at the proxy and bind the host ports t
 
 ## Troubleshooting
 
+### `pull access denied for your-openclaw-image`
+An older version of `.env.example` shipped with a placeholder value
+(`OPENCLAW_IMAGE=your-openclaw-image:latest`) that is not a real image.
+If your local `.env` was created from that template, `./scripts/start.sh`
+fails with:
+
+```
+pull access denied for your-openclaw-image, repository does not exist or may require 'docker login'
+```
+
+`./scripts/setup.sh` protects local secrets by never overwriting an
+existing `.env`, so rerunning setup won't swap in the new default on its
+own — but current `setup.sh` performs a targeted migration that replaces
+the exact old placeholder with `ghcr.io/openclaw/openclaw:latest` and
+leaves every other value untouched:
+
+```bash
+./scripts/setup.sh
+./scripts/start.sh
+```
+
+If you'd rather fix `.env` by hand, the one-liner is:
+
+```bash
+sed -i 's|^OPENCLAW_IMAGE=.*|OPENCLAW_IMAGE=ghcr.io/openclaw/openclaw:latest|' .env
+./scripts/start.sh
+```
+
 ### `OPENCLAW_IMAGE` cannot be pulled
-If `docker compose` fails with `pull access denied` or `manifest not found`, the tag in `OPENCLAW_IMAGE` is not reachable. Check you're logged in to `ghcr.io` if the image is private (`docker login ghcr.io`), pin to a known-good tag, or point at a locally-built image, then `./scripts/start.sh` again.
+If `docker compose` fails with `pull access denied` or `manifest not found` for any other image tag, the tag in `OPENCLAW_IMAGE` is not reachable. Check you're logged in to `ghcr.io` if the image is private (`docker login ghcr.io`), pin to a known-good tag, or point at a locally-built image, then `./scripts/start.sh` again.
 
 ### Port already in use
 Change the offending `<AGENT>_HOST_PORT` value in `.env`, then restart:
