@@ -74,8 +74,10 @@ chmod +x scripts/*.sh docker/base/entrypoint.sh
 ./scripts/openclaw.sh ps
 ```
 
-First-run setup, once per role (interactive — it will prompt for your OpenClaw
-auth/config):
+First-run setup, once per role. Each call runs **two** interactive OpenClaw
+steps under the hood — `openclaw setup` (creates `~/.openclaw/openclaw.json`)
+and `openclaw configure` (pick provider, API key, gateway settings) — then
+restarts the container so the gateway picks up the config:
 
 ```bash
 ./scripts/openclaw.sh setup pa
@@ -87,6 +89,10 @@ auth/config):
 
 ./scripts/openclaw.sh gateway status   # expect 6x UP
 ```
+
+If you only need to change provider/model later (e.g. swap OpenAI for
+Anthropic), use `./scripts/openclaw.sh configure <role>` to rerun just the
+configure step.
 
 From this point the gateway in each role auto-starts on every container start
 (host reboot, `docker compose down/up`, single-role `restart`). The config is
@@ -152,7 +158,8 @@ It includes pre-flight checks for Docker, Compose, permissions, ports, disk spac
 ./scripts/openclaw.sh backup
 
 # OpenClaw gateway management
-./scripts/openclaw.sh setup <role>           # interactive first-run config
+./scripts/openclaw.sh setup <role>           # first-run: openclaw setup + configure + restart
+./scripts/openclaw.sh configure <role>       # rerun just configure (e.g. swap provider)
 ./scripts/openclaw.sh gateway status          # UP / DOWN / NEEDS_SETUP per role
 ./scripts/openclaw.sh gateway restart <role>  # restart container (relaunches gateway)
 ./scripts/openclaw.sh gateway logs <role>     # tail /var/log/openclaw/gateway.log
