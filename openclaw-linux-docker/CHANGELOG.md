@@ -1,5 +1,82 @@
 # Changelog
 
+## 1.2.0 — 2026-05-10
+
+### Headline
+Gateway auto-starts when each role's container starts — once you've run `openclaw setup` once for that role. Matches exactly the manual flow that worked for users in 1.1.x.
+
+### Why this is a breaking-ish (but data-preserving) change
+The 1.1.x design tried to be clever:
+- Run the gateway as the unprivileged `openclaw` user.
+- Isolate per-role state via `openclaw --profile <role>` under `~/.openclaw-<role>`.
+- Supervise with a watchdog that detached via `runuser + setsid + nohup`.
+
+In practice this caused two layered bugs (1.1.1 watchdog log permission, 1.1.2 partial fix) and — most importantly — didn't match the on-disk reality of OpenClaw, which writes its config to the home of whoever runs `openclaw setup`. Since users naturally `docker exec -it ... bash` and run setup as root, the config landed in `/root/.openclaw/` and the openclaw-user gateway couldn't read it.
+
+1.2.0 mirrors the proven manual flow:
+- The gateway runs as **root** (the same user that runs `openclaw setup`).
+- No `--profile` flag. Each role's isolation comes from a **per-role named volume mounted at `/root/.openclaw`**, not from a CLI profile.
+- The watchdog is **gone**. The entrypoint just `nohup setsid openclaw gateway &`s in the background, exactly like the user did manually.
+
+### Added
+- **Per-role config volumes** `openclaw_config_<role>` mounted at `/root/.openclaw`. First-run `openclaw setup` writes here and survives `down`, `build`, host reboot.
+- **`scripts/openclaw.sh setup <role>`** — runs `openclaw setup` interactively in the named role, then restarts that role so the gateway picks up the new config. One command, end-to-end.
+- **`gateway status`** now distinguishes `UP` / `DOWN` / `NEEDS_SETUP` so it's obvious which roles still need first-run config.
+- **`health`** subcommand reports `config NOT set up — run: ./scripts/openclaw.sh setup <role>` for any role missing `/root/.openclaw/config.json`.
+- Healthcheck: a role with no config is treated as healthy (it's intentionally idle, not broken). A role with config must have port 18789 listening to be healthy.
+
+### Changed
+- `entrypoint.sh` simplified from ~160 lines to ~90. No watchdog script, no profile dirs, no `runuser`/`setsid` user-switch dance. Gateway launched with `nohup setsid openclaw gateway </dev/null >>...gateway.log 2>&1 &`.
+- `Dockerfile`: removed the `oc` and `oc-gw` profile-aware aliases; added simple `oc-gw` (= `openclaw gateway`) and `oc-logs` aliases in `/etc/profile.d/openclaw-aliases.sh` so they work in any shell.
+- `gateway restart [role]` now restarts the container (which re-runs the entrypoint and relaunches the gateway). Simpler and more reliable than poking PID files.
+- The `OPENCLAW_GATEWAY_PORT` and `OPENCLAW_GATEWAY_RESTART_DELAY` env vars are gone. The gateway always uses 18789 inside the container (host port mapping is unchanged via `GW_PORT_<ROLE>`).
+
+### Removed
+- `/usr/local/bin/openclaw-gateway-watchdog` — no longer needed.
+- `~/.openclaw-<role>` per-role profile dirs — replaced by `/root/.openclaw` mounted from a per-role volume.
+- `openclaw_profile_<role>` named volumes — replaced by `openclaw_config_<role>`.
+- `/var/log/openclaw/watchdog.log` — there's no watchdog anymore. Only `gateway.log` remains.
+
+### Migration from 1.1.x
+All your role workspaces (`openclaw_<role>`, `openclaw_shared`) are preserved untouched. The OpenClaw config is **not** carried forward automatically because the storage location changed (`~/.openclaw-<role>` → `/root/.openclaw`). You'll re-run setup once per role:
+
+```bash
+git pull
+cd openclaw-linux-docker
+unzip -o openclaw-docker.zip
+cd openclaw-docker
+./scripts/openclaw.sh down
+./scripts/openclaw.sh build
+./scripts/openclaw.sh up
+
+# First-run setup per role (once each)
+./scripts/openclaw.sh setup pa
+./scripts/openclaw.sh setup architect
+./scripts/openclaw.sh setup designer
+./scripts/openclaw.sh setup developer
+./scripts/openclaw.sh setup qc
+./scripts/openclaw.sh setup operator
+
+./scripts/openclaw.sh gateway status   # 6x UP
+```
+
+From now on the gateway will auto-start any time the container starts (host reboot, `docker compose down/up`, single-role `restart`, etc.). No more terminals to keep open.
+
+### Optional: copy 1.1.x config forward
+If you already ran `openclaw setup` inside a 1.1.x container as root and want to skip re-running it, you can copy the existing config file before running `setup`:
+
+```bash
+# Per role, before running setup again
+docker run --rm \
+  -v openclaw_openclaw_config_pa:/dst \
+  -v $(docker inspect -f '{{ .GraphDriver.Data.MergedDir }}' openclaw-pa)/root/.openclaw:/src:ro \
+  ubuntu:24.04 sh -c 'cp -a /src/. /dst/'
+```
+(That's only needed if you went through 1.1.x setup as root. If you ran `openclaw --profile <role> setup` as the openclaw user under 1.1.x, the config format / location differs and a re-run of setup is the cleaner path.)
+
+### Rollback
+If you need to roll back to 1.1.2: `git revert` the merge commit for this PR. Workspace and shared volumes are untouched. The new `openclaw_config_<role>` volumes will linger — they're harmless, or remove with `docker volume rm` if you want a fully clean rollback.
+
 ## 1.1.2 — 2026-05-10
 
 ### Fixed
