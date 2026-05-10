@@ -1,5 +1,34 @@
 # Changelog
 
+## 1.2.1 — 2026-05-10
+
+### Fixed
+- **Wrong config filename in every check.** 1.2.0 looked for `/root/.openclaw/config.json`, but the OpenClaw 2026.5.x CLI actually writes its config to `/root/.openclaw/openclaw.json` ([OpenClaw docs](https://docs.openclaw.ai/start/setup)). Result: even after a successful `openclaw setup` the entrypoint, the docker-compose healthcheck, and `./scripts/openclaw.sh gateway status` all reported `NEEDS_SETUP` and the gateway never auto-started. All four locations now check for `openclaw.json` (with `config.json` kept as a tolerated fallback so a future CLI rename won't break us again).
+  - `docker/base/entrypoint.sh`
+  - `docker/base/Dockerfile` (comment only)
+  - `docker-compose.yml` (healthcheck `CMD-SHELL`)
+  - `scripts/openclaw.sh` (`setup`, `health`, `gateway status` subcommands)
+
+### Added
+- **`./scripts/openclaw.sh setup <role>` now also runs `openclaw configure`** as a second interactive step. `openclaw setup` alone only creates the directory layout and a stub `openclaw.json` — the gateway can't actually start without provider/API-key choices, which `openclaw configure` collects. The CLI itself flags this as the next step ("Next: run `openclaw configure` to choose models, channels, Gateway, plugins, skills, and health checks"). Press Ctrl-C during the configure step if you've already done it manually.
+- **`./scripts/openclaw.sh configure <role>`** — standalone subcommand for re-running configure later (e.g. switching providers) without redoing setup.
+- **Better post-setup status output.** When the gateway is DOWN after setup, the script now tails the last 20 lines of `/var/log/openclaw/gateway.log` so the failure reason is immediately visible — no more guessing.
+
+### Migration from 1.2.0
+No data changes. Just pull, re-extract the zip, rebuild, and re-run setup if you tried it on 1.2.0:
+
+```bash
+git pull
+cd openclaw-linux-docker
+rm -rf openclaw-docker && unzip openclaw-docker.zip -d openclaw-docker
+cd openclaw-docker && chmod +x scripts/*.sh docker/base/entrypoint.sh
+./scripts/openclaw.sh down && ./scripts/openclaw.sh build && ./scripts/openclaw.sh up
+./scripts/openclaw.sh setup pa     # now does setup + configure + restart
+./scripts/openclaw.sh gateway status
+```
+
+If you already ran `openclaw setup` (and possibly `openclaw configure`) manually inside a 1.2.0 container, your config is preserved in the `openclaw_config_<role>` volume and survives the rebuild — the entrypoint will pick it up automatically once the new image is in place.
+
 ## 1.2.0 — 2026-05-10
 
 ### Headline
