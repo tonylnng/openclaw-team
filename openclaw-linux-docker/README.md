@@ -1,5 +1,9 @@
 # OpenClaw Team Docker Stack
 
+Current version: see [`VERSION`](VERSION). Release notes: [`CHANGELOG.md`](CHANGELOG.md).
+
+**1.1.0 highlights** — the base image now ships with Node.js 22 LTS and `openclaw` pre-installed; each of the six role containers runs its own gateway under an isolated profile (`~/.openclaw-<role>`) on host ports `127.0.0.1:18791-18796`.
+
 This repository provides a generic Docker Compose package for running six Ubuntu-based OpenClaw role containers:
 
 - `openclaw-architect`
