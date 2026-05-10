@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.1.1 — 2026-05-10
+
+### Fixed
+- **Gateway no longer dies when the entrypoint hands off to `sleep infinity`.** The previous version started the gateway via `su - openclaw -c "... nohup ... &"`, which left it attached to the entrypoint's session/process group; SIGHUP from session teardown could kill it. Now the gateway is supervised by a small watchdog process that:
+  - is detached via `runuser` + `setsid` + `nohup` into its own session and process group,
+  - records its own PID at `/var/run/openclaw/watchdog.pid` and the gateway's PID at `/var/run/openclaw/gateway.pid`,
+  - **automatically respawns the gateway** if it crashes (with a configurable backoff, `OPENCLAW_GATEWAY_RESTART_DELAY`, default 5s),
+  - cleanly stops the gateway on SIGTERM/SIGINT.
+- **`scripts/openclaw.sh gateway restart`** now sends SIGTERM to the gateway PID and lets the watchdog respawn it (instead of `pkill`-ing the process by name pattern, which was racy).
+
+### Added
+- New env var `OPENCLAW_GATEWAY_RESTART_DELAY` (default `5`) to tune watchdog backoff.
+- New log file `/var/log/openclaw/watchdog.log` for supervisor events.
+- `/var/run/openclaw/` is now created at image build time (was: only at runtime).
+
+### Notes
+- Existing volumes and `.env` files keep working unchanged.
+- The container CMD is still `sleep infinity`. The watchdog runs as a separate, detached process — it is not PID 1 and a crashed gateway never affects shell-in access.
+
 ## 1.1.0 — 2026-05-10
 
 ### Added
