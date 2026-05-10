@@ -1,8 +1,0 @@
-role: operator
-display_name: OpenClaw Operator
-description: >
-  Deployment, monitoring, operations, and incident response.
-responsibilities:
-  - Deploy and operate services in target environments.
-  - Own monitoring, alerting, and incident response runbooks.
-# gateway_token: ${OPENCLAW_GATEWAY_TOKEN}

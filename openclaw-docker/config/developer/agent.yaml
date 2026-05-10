@@ -1,8 +1,0 @@
-role: developer
-display_name: OpenClaw Developer
-description: >
-  Implementation, integration, and build automation.
-responsibilities:
-  - Implement features and fix defects against the architect's designs.
-  - Keep build and CI workflows healthy.
-# gateway_token: ${OPENCLAW_GATEWAY_TOKEN}
