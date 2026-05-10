@@ -1,8 +1,0 @@
-role: designer
-display_name: OpenClaw Designer
-description: >
-  UX flows, interface specifications, and product-experience design.
-responsibilities:
-  - Produce user flows, wireframes, and design specifications.
-  - Collaborate with architect on feasibility and developer on handoff.
-# gateway_token: ${OPENCLAW_GATEWAY_TOKEN}
