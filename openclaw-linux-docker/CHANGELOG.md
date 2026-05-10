@@ -1,5 +1,67 @@
 # Changelog
 
+## 1.1.2 — 2026-05-10
+
+### Fixed
+- **Watchdog log file permission bug.** In 1.1.1 the entrypoint launched the watchdog with `nohup setsid runuser -u openclaw -- ... >>/var/log/openclaw/watchdog.log 2>&1 &`. The shell running entrypoint.sh (root) opened `watchdog.log` *before* `runuser` switched user, so the file ended up owned by `root:root` with mode `0644`. The watchdog, running as the `openclaw` user, then failed every `echo ... >> "${WLOG}"` with `Permission denied`, exited immediately, never wrote its PID file, and the entrypoint logged a misleading `watchdog did not register PID` warning. End result: no gateway running.
+
+  Fix:
+  - Pre-create `/var/log/openclaw/watchdog.log` and `/var/log/openclaw/gateway.log` owned by `openclaw:openclaw` (mode 0644) at the top of `entrypoint.sh`, before any subshell or redirect could touch them.
+  - Move the `>>watchdog.log` redirect *inside* the `runuser`-launched bash, so the fd is opened after the user switch (with openclaw's permissions) instead of by the root shell.
+  - Add `disown` after the background launch so the parent shell can't deliver SIGHUP through job control.
+
+### Improved
+- **Sanity-check window**: the entrypoint now polls for `/var/run/openclaw/watchdog.pid` for up to 10 seconds (was: a single 1-second check). On failure, the entrypoint dumps the last 50 lines of `watchdog.log` to its own stderr so `docker logs <role>` shows the real error instead of a generic warning.
+
+### How to deploy
+```bash
+cd openclaw-linux-docker
+git pull
+unzip -o openclaw-docker.zip
+cd openclaw-docker
+./scripts/openclaw.sh down
+./scripts/openclaw.sh build
+./scripts/openclaw.sh up
+./scripts/openclaw.sh gateway status   # 6x UP
+```
+
+### First-run setup (one-time, per role)
+OpenClaw refuses to start the gateway until each role's profile has been
+configured (the gateway log will say `Missing config. Run \`openclaw --profile
+<role> setup\``). Do this once per role:
+
+```bash
+for role in architect designer developer qc operator pa; do
+  ./scripts/openclaw.sh shell "$role"
+  # inside the container:
+  openclaw --profile "$role" setup     # interactive; answer the prompts
+  exit
+done
+```
+
+Within a few seconds (`OPENCLAW_GATEWAY_RESTART_DELAY`, default 5s) of
+completing `setup`, the watchdog will respawn the gateway and it will stay
+UP. No rebuild required.
+
+### Quick fix for already-running 1.1.1 containers (no rebuild)
+```bash
+for c in openclaw-architect openclaw-designer openclaw-developer openclaw-qc openclaw-operator openclaw-pa; do
+  docker exec "$c" bash -c '
+    pkill -f openclaw-gateway-watchdog 2>/dev/null || true
+    pkill -f "openclaw .*gateway run" 2>/dev/null || true
+    rm -f /var/log/openclaw/watchdog.log /var/log/openclaw/gateway.log
+    install -o openclaw -g openclaw -m 0644 /dev/null /var/log/openclaw/watchdog.log
+    install -o openclaw -g openclaw -m 0644 /dev/null /var/log/openclaw/gateway.log
+    rm -f /var/run/openclaw/watchdog.pid /var/run/openclaw/gateway.pid
+    nohup setsid runuser -u openclaw -- bash -c \
+      "exec /usr/local/bin/openclaw-gateway-watchdog \$0 \$1 \$2 </dev/null >>/var/log/openclaw/watchdog.log 2>&1" \
+      "${OPENCLAW_ROLE}" "${OPENCLAW_GATEWAY_PORT:-18789}" 5 </dev/null >/dev/null 2>&1 &
+    disown || true'
+done
+sleep 5
+./scripts/openclaw.sh gateway status
+```
+
 ## 1.1.1 — 2026-05-10
 
 ### Fixed
