@@ -51,9 +51,9 @@ BotFather replies with your HTTP API token — a string like 7891234567:AAH...zX
 - **Auto-escalation if no response:** [Telegram reminder cadence]
 
 ## 5. Required Credentials (references only — never paste secrets here)
-| Secret | Storage Location 
+| Secret | Storage Location |
 |---|---|
-| GitHub PAT (repo: read/write, issues: write, projects: write) |  |
+| GitHub PAT (repo: read/write, issues: write, projects: write) | |
 | Application Server Info | IP, User Name, Password |
 
 
